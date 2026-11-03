@@ -48,27 +48,30 @@ Below is an audit of the top extreme single-day price movements compared against
 
 ### B. Structural Interpretation of Anomalies
 
-1. **Unadjusted Prices vs. Adjusted Market Capitalization**:
+1. **Observed Price Movements vs. Market Capitalization**:
    - Notice that while price jumped by **+953.9%** for `WIPR.NS` on 2015-08-18, the **market capitalization moved by only -0.8%** (normal trading noise).
    - The implied outstanding shares ratio dropped by approximately $1/10$.
    - The subsequent trading day, the price reverted back to its baseline.
-   - This proves that these jumps represent **raw corporate action discontinuities** (such as stock split adjustments, bonus share issues, or special settlement sessions) embedded in the provided dataset.
+   - While certain price spikes where market capitalization remains flat are consistent with unadjusted corporate actions, without official corporate filing records or exchange disclosure data, these 8,493 extreme daily movements are properly classified as **observed price-data anomalies and quote discontinuities** rather than definitively labeled as specific splits or bonus issues.
 
 2. **Per-Stock Volatility Metrics**:
    - Annualized price volatility for all 30 stocks ranges between **580% and 830%**, with roughly 270 to 350 days of returns exceeding 50% per stock.
    - Market capitalization volatility closely mirrors price volatility across all names (volatility ratio $\approx 0.8\text{x}$ to $1.3\text{x}$).
 
-### C. Methodological Handling, Share Count Correction & Limitations
+### C. Methodological Handling, Share Count Clarification & Limitations
 
 1. **Strict Data Preservation**:
    - Per official challenge instructions, the original datasets (`Test_price_data.csv` and `Test_mcap_data.csv`) are preserved 100% without arbitrary modification, outlier deletion, or synthetic corporate-action fabrication.
-2. **Correction Regarding Fixed Share Counts**:
-   - **Crucial Clarification**: Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize corporate actions or price scale jumps.
-   - If a stock experiences an unadjusted 5:1 stock split (-80% price drop), holding a fixed share count without receiving the 5x new shares experiences an artificial -80% position loss.
-   - Conversely, if a stock experiences a 400% quote jump, holding fixed shares experiences an artificial +400% position gain.
-   - Fixed share counts simply reflect true physical execution on the supplied raw closing prices without inventing hypothetical split adjustment factors.
-3. **Material Impact on Strategy Performance**:
-   - These raw data spikes directly cause the portfolio's high annualized volatility (262.47%), extreme 1-day return tails (1,274 days with $|R| > 10\%$), and inflated compounding (CAGR 104.63%).
+2. **Clarification on Fixed Share Counts**:
+   - Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize unadjusted corporate actions or price scale jumps.
+   - If an unadjusted price drops 80% due to an unadjusted 5:1 stock split, holding a fixed share count without receiving the 5x new shares registers an artificial -80% position loss.
+   - Conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
+   - Fixed share counts simply reflect physical execution on the supplied raw closing prices without inventing hypothetical adjustment factors.
+3. **Transaction Costs & Market Frictions**:
+   - Transaction costs, execution commissions, slippage, and market impact are not modelled because the assignment specification does not specify or provide parameters for them.
+4. **Material Impact on Strategy Performance**:
+   - These raw data anomalies directly drive the portfolio's high annualized volatility (262.47%), extreme 1-day return tails (1,274 days with $|R| > 10\%$), and compounding metrics (CAGR 104.63%).
    - The strategy's Sharpe Ratio of 1.4532 reflects the ratio of high mean daily return (+1.51%/day) to high daily volatility (16.53%/day).
-4. **Unresolved Data Limitation**:
+   - **Real-World Performance Disclosure**: Actual performance in live trading may differ materially due to execution frictions, split adjustments, slippage, borrowing fees, and liquidity constraints.
+5. **Unresolved External Data Limitation**:
    - The absence of official corporate-action adjustment factors in the Finominal challenge dataset is an inherent external data limitation. All official results presented in this project are derived strictly from the supplied raw data as mandated.

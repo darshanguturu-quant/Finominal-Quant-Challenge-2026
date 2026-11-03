@@ -83,16 +83,15 @@ The historical universe comprises 30 equities spanning **5,337 trading days** fr
    - Exactly 253 trading days are present in 2005 (`2005-01-03` to `2005-12-30`).
    - For the first calculation date $T_{calc} = \text{2005-12-30}$ (index 252), the maximum lookback of 252 days maps to index $252 - 252 = 0$ (`2005-01-03`), ensuring complete historical coverage without trimming.
 
-### Corporate Action Discontinuities & Price Anomaly Investigation
+### Observed Price-Data Anomalies and Discontinuities
 
-Per Item 1 of the upgrade instructions, an exhaustive scan across all 30 tickers was conducted to investigate extreme daily movements:
+An empirical scan across all 30 tickers was conducted to investigate extreme daily movements:
 - **Frequency of Extreme Jumps**: A total of 8,493 daily returns exceed +100% or fall below -50%.
 - **Price vs. Market Cap Behavior**: For extreme price jumps (e.g., `GICH.NS` on 2013-11-05: +2,436%; `WIPR.NS` on 2015-08-18: +953.9%), corresponding market capitalizations moved by only normal daily fluctuations (+3.9% and -0.8% respectively).
-- **Economic Interpretation & Fixed Share Counts**:
-  - The implied share count dropped proportionally during price spikes, and prices reverted the following day. This confirms that the test dataset contains **raw unadjusted corporate action discontinuities** (splits, bonuses, special sessions) alongside market noise.
-  - **Correction Regarding Fixed Share Counts**: Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize corporate actions or price scale jumps. If a stock undergoes an unadjusted 5:1 stock split (-80% price drop), holding a fixed share count without receiving the 5x new shares experiences an artificial -80% position loss. Conversely, if an unadjusted price jumps 400%, holding fixed shares takes an artificial +300% position gain.
-  - **Material Impact**: These unadjusted price spikes materially drive the portfolio's high annualized volatility (262.47%), extreme daily return tails (1,274 days with $|R| > 10\%$), and inflated compounding (CAGR 104.63%).
-  - **Preservation Policy & Unresolved Limitation**: In strict compliance with challenge rules, the input datasets are preserved 100% without arbitrary modification or synthetic corporate-action fabrication. The absence of official corporate-action adjustment factors is an inherent, unresolved external data limitation. Official results are reported directly from the supplied raw data.
+- **Classification as Observed Price Anomalies**: While certain price spikes where market capitalization remains flat are consistent with unadjusted corporate actions, without supporting official corporate-action filings or exchange records, they are properly classified as **observed price-data anomalies and quote discontinuities** rather than definitively labeled as specific splits or bonus issues.
+- **Clarification on Fixed Share Counts**: Holding fixed share quantities between monthly rebalance dates does **not** neutralize unadjusted corporate actions or price scale jumps. If an unadjusted price drops 80% due to an unadjusted split, holding a fixed share count without receiving new split shares experiences an artificial 80% loss on that position. Conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
+- **Material Impact on Metrics**: These observed price anomalies materially drive the portfolio's high annualized volatility (262.47%), extreme daily return tails (1,274 days with $|R| > 10\%$), and compounding metrics (CAGR 104.63%).
+- **Preservation Policy & Unresolved Data Limitation**: In strict compliance with challenge rules, the input datasets are preserved 100% without arbitrary modification or synthetic corporate-action fabrication. The absence of official corporate-action adjustment factors is an inherent, unresolved external data limitation. Official results are reported directly from the supplied raw data.
 
 ---
 
@@ -227,7 +226,28 @@ Per Item 4 of the upgrade instructions, automated assertions in `src/backtest.py
 
 ---
 
-## 9. Installation, Setup & Execution
+## 9. Methodological Framework: Verified Results, Assumptions & Unresolved Data Limitations
+
+### A. Verified Calculations & Algorithmic Results
+1. **Algorithmic Compliance**: Momentum calculation, descending ranking, rank-12 buffer selection, and iterative 20% capping are fully implemented and verified against the official challenge PDF.
+2. **Exhaustive Constraint Verification**: Every rebalance event across all 246 months and all 5 strategies satisfies: exactly 10 holdings, maximum $20.0\%$ weight per stock, $100.0\%$ total weight sum, and retention buffer rules.
+3. **Execution Timing**: Zero look-ahead bias is programmatically enforced; signals use data strictly on $T_{calc}$, trades execute at $T_{reb}$ close, and new weights take effect on subsequent days.
+4. **Complete Audit Trail**: All 12,300 holdings records across all 5 strategies are exported and verified in [`results/portfolio_holdings.csv`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/portfolio_holdings.csv).
+5. **Programmatic Optimal Identification**: Lookback of **189 Trading Days** maximizes the Annualized Sharpe Ratio under both active observation ($N = 5,083$) and full-period ($N = 5,084$) conventions.
+
+### B. Implementation Assumptions
+1. **Initial Day Convention**: The backtest execution begins on January 2, 2006. Prior to execution at market close, cash was held (return assumed 0.0%). Active equity returns begin on January 3, 2006.
+2. **Risk-Free Rate**: Assumed 0.0% per the assignment specification.
+3. **Transaction Costs & Market Impact**: Transaction costs and market impact are not modelled because the assignment does not specify or provide parameters for them.
+
+### C. Unresolved Data Limitations
+1. **Observed Price-Data Anomalies**: The historical dataset contains 8,493 extreme price movements (> +100% or < -50%). Without official corporate-action filing records, these are treated as observed price-data anomalies and quote discontinuities.
+2. **Absence of Adjustment Factors**: The challenge provides raw closing prices without dividend, split, or bonus adjustment factors. Under the challenge constraints ("preserve original datasets; do not invent external data"), we cannot fabricate adjustment factors or modify prices.
+3. **Performance Impact**: These raw data anomalies materially drive the high portfolio volatility (262.47%) and compounding CAGR (104.63%). Actual performance in live trading may differ materially due to execution frictions, price adjustments, slippage, and liquidity dynamics.
+
+---
+
+## 10. Installation, Setup & Execution
 
 ### Prerequisites
 - Python 3.11 or Python 3.12
@@ -252,7 +272,7 @@ This automatically verifies the datasets, executes all 5 strategies, saves the s
 
 ---
 
-## 10. Loom Presentation Script (3–5 Minutes)
+## 11. Loom Presentation Script (3–5 Minutes)
 
 *Below is the complete narration script for the recorded Loom walkthrough video.*
 
@@ -263,12 +283,12 @@ This automatically verifies the datasets, executes all 5 strategies, saves the s
 >
 > Right upfront, our programmatic results show that **189 Trading Days (~9 months)** is the optimal lookback parameter, delivering an **Annualized Sharpe Ratio of 1.4532**, a **CAGR of 104.63%**, and a **Cumulative Return of over 187 million percent** across the 20.5-year backtest."
 
-### [0:45 – 1:45] Data Architecture & Corporate Action Investigation
+### [0:45 – 1:45] Data Architecture & Observed Price Anomalies
 > "Let’s look at the data architecture. We were provided with historical daily closing prices and market capitalization data from January 2005 to June 2026.
 >
 > In our data quality audit, we addressed date format differences (`DD-MM-YYYY` vs `YYYY-MM-DD`) and aligned all 5,337 trading days with zero missing values.
 >
-> We also conducted an in-depth corporate-action investigation: we detected transient price jumps where prices jumped +1000% while market capitalizations moved by less than 1%. This indicates unadjusted corporate action discontinuities (splits/bonuses). We clarified that holding fixed shares does NOT neutralize splits; rather, without official adjustment factors in the dataset, our backtest reflects pure execution on the raw provided data, which directly drives the high portfolio volatility (262%) and CAGR (104%). We explicitly document this as an inherent external data limitation.
+> We also conducted an in-depth data anomaly investigation: we observed 8,493 extreme price movements where prices shifted dramatically while market capitalizations remained relatively flat. Without official corporate filing records, these are properly classified as observed price-data anomalies and quote discontinuities. We clarify that holding fixed shares does not neutralize unadjusted corporate actions; rather, without official adjustment factors in the dataset, our backtest preserves the raw data without arbitrary modification. We note transparently that actual performance in live trading may differ materially.
 >
 > Crucially, our backtest engine enforces **zero look-ahead bias**:
 > - Rebalances occur on the first trading day of the month ($T_{reb}$).
@@ -294,5 +314,6 @@ This automatically verifies the datasets, executes all 5 strategies, saves the s
 > "To guarantee production quality:
 > - We built 24 automated unit tests in `pytest` covering momentum formulas, rank buffers, capping edge cases, weight validation across all 1,230 rebalance events, and look-ahead bias perturbation tests. All 24 tests pass with 100% success.
 > - We improved our drawdown visualization with a 2-panel chart highlighting the optimal strategy alongside comparative curves.
+> - Transaction costs and market impact were not modelled because the assignment specification did not provide parameters for them.
 >
 > In conclusion, our solution strictly satisfies every rule of the assignment, uses zero synthetic data for final results, and establishes **189 Trading Days** as the optimal momentum lookback. Thank you for your time and consideration."
