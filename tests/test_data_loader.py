@@ -66,3 +66,4 @@ def test_synthetic_data_loader_validations(tmp_path):
 
     with pytest.raises(ValueError, match="Row count mismatch"):
         load_and_validate_data(p_path, m_path)
+

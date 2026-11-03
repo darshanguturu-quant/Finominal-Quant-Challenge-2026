@@ -56,3 +56,4 @@
 ## Phase 8: Final Submission & Documentation
 - Authored professional `README.md` with complete mathematical descriptions, installation instructions, results, and critical assessment.
 - Prepared 3–5-minute Loom presentation script.
+

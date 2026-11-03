@@ -76,3 +76,4 @@ def test_calculate_all_metrics_structure():
     assert "cumulative_return_pct" in res
     assert "cagr_pct" in res
     assert "max_drawdown_pct" in res
+

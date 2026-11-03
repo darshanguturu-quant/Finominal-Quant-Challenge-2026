@@ -188,6 +188,19 @@ class BacktestEngine:
                 current_holdings = decision.selected_holdings
                 current_weights = decision.capped_weights
 
+                # Rigorous weight validation at every rebalance event
+                if len(decision.selected_holdings) != self.portfolio_size:
+                    raise ValueError(
+                        f"Expected {self.portfolio_size} holdings on {current_date}, got {len(decision.selected_holdings)}"
+                    )
+                if (decision.capped_weights > self.weight_cap + 1e-6).any():
+                    violators = decision.capped_weights[decision.capped_weights > self.weight_cap + 1e-6]
+                    raise ValueError(f"Weight cap violated on {current_date}:\n{violators}")
+                if not np.isclose(decision.capped_weights.sum(), 1.0, atol=1e-6):
+                    raise ValueError(
+                        f"Weights sum to {decision.capped_weights.sum():.8f} (!= 1.0) on {current_date}"
+                    )
+
                 # Target share allocation at today's close
                 current_shares = (portfolio_val * current_weights) / p_exec
 
@@ -201,6 +214,7 @@ class BacktestEngine:
                     "added_holdings": decision.added_holdings,
                     "raw_weights": decision.raw_weights.to_dict(),
                     "capped_weights": decision.capped_weights.to_dict(),
+                    "momentum_ranks": decision.momentum_ranks.to_dict(),
                     "portfolio_value_at_rebalance": portfolio_val,
                 })
 
@@ -219,3 +233,4 @@ class BacktestEngine:
             daily_holdings=daily_holdings,
             daily_weights=df_weights,
         )
+

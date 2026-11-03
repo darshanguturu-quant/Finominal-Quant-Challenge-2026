@@ -22,6 +22,7 @@ class RebalanceDecision:
     added_holdings: List[str]
     raw_weights: pd.Series
     capped_weights: pd.Series
+    momentum_ranks: pd.Series
 
 
 def select_portfolio_holdings(
@@ -247,4 +248,6 @@ def construct_rebalanced_portfolio(
         added_holdings=added,
         raw_weights=raw_weights,
         capped_weights=capped_weights,
+        momentum_ranks=ranks[selected],
     )
+

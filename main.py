@@ -115,21 +115,62 @@ def generate_charts(
     plt.close(fig)
 
     # ----------------------------------------------------
-    # Chart 3: Underwater Drawdown Chart
+    # Chart 3: Underwater Drawdown Chart (2-Panel Enhanced Readability)
     # ----------------------------------------------------
-    fig, ax = plt.subplots(figsize=(12, 5.5), dpi=300)
+    fig, (ax_opt, ax_comp) = plt.subplots(2, 1, figsize=(13, 8.5), dpi=300, sharex=True)
+
+    # Panel 1: Optimal Strategy (189 Days) Focus with Fill & Key Events
+    opt_L = 189
+    opt_res = results_dict[opt_L]
+    opt_dd = calculate_drawdown_series(opt_res.daily_returns) * 100.0
+    ax_opt.plot(opt_res.dates, opt_dd, color=colors[opt_L], linewidth=2.0, label=f"Optimal Strategy L = {opt_L} Days")
+    ax_opt.fill_between(opt_res.dates, opt_dd, 0, color=colors[opt_L], alpha=0.25)
+    ax_opt.axhline(0, color="#333333", linestyle="-", linewidth=0.8, alpha=0.7)
+
+    # Annotate Maximum Drawdown
+    min_dd_val = opt_dd.min()
+    min_dd_date = opt_dd.idxmin()
+    ax_opt.scatter([min_dd_date], [min_dd_val], color="black", s=60, zorder=5)
+    ax_opt.annotate(
+        f"Max Drawdown: {min_dd_val:.1f}%\n({min_dd_date.strftime('%Y-%m-%d')})",
+        xy=(min_dd_date, min_dd_val),
+        xytext=(30, -15),
+        textcoords="offset points",
+        fontsize=9.5,
+        fontweight="bold",
+        arrowprops=dict(arrowstyle="->", color="black", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.3", fc="#fffae6", ec="#cccccc", lw=0.8),
+    )
+
+    # Annotate 2008 Global Financial Crisis & 2020 COVID Shock
+    ax_opt.axvspan(pd.Timestamp("2008-01-01"), pd.Timestamp("2009-03-31"), color="#cccccc", alpha=0.2, label="2008 GFC Period")
+    ax_opt.axvspan(pd.Timestamp("2020-02-01"), pd.Timestamp("2020-04-30"), color="#e6f2ff", alpha=0.35, label="2020 COVID Shock")
+
+    ax_opt.set_title("Optimal Momentum Strategy (L = 189 Days) - Historical Drawdown Profile", fontsize=13, fontweight="bold", pad=10)
+    ax_opt.set_ylabel("Drawdown (%)", fontsize=11, fontweight="bold")
+    ax_opt.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax_opt.set_ylim(-85, 5)
+    ax_opt.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=9, loc="lower left")
+    ax_opt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+
+    # Panel 2: Comparative Curves Across All 5 Lookback Periods
     for L in LOOKBACK_PERIODS:
         res = results_dict[L]
         dd = calculate_drawdown_series(res.daily_returns) * 100.0
-        linewidth = 2.0 if L == 189 else 1.2
-        ax.plot(res.dates, dd, label=f"L = {L} days (Max DD: {summary_df.loc[L, 'max_drawdown_pct']:.1f}%)", color=colors[L], linewidth=linewidth, alpha=0.85)
+        lw = 2.2 if L == opt_L else 1.2
+        alpha = 0.95 if L == opt_L else 0.75
+        label = f"L = {L:3d}d (Max DD: {summary_df.loc[L, 'max_drawdown_pct']:.1f}%)"
+        ax_comp.plot(res.dates, dd, label=label, color=colors[L], linewidth=lw, alpha=alpha)
 
-    ax.set_title("Historical Drawdown Profiles (2006 - 2026)", fontsize=14, fontweight="bold", pad=12)
-    ax.set_xlabel("Date", fontsize=11, fontweight="bold")
-    ax.set_ylabel("Drawdown (%)", fontsize=11, fontweight="bold")
-    ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
-    ax.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=9.5, loc="lower left")
-    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    ax_comp.axhline(0, color="#333333", linestyle="-", linewidth=0.8, alpha=0.7)
+    ax_comp.set_title("Comparative Drawdown Profiles Across All 5 Lookback Periods (2006 - 2026)", fontsize=13, fontweight="bold", pad=10)
+    ax_comp.set_xlabel("Date", fontsize=11, fontweight="bold")
+    ax_comp.set_ylabel("Drawdown (%)", fontsize=11, fontweight="bold")
+    ax_comp.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+    ax_comp.set_ylim(-85, 5)
+    ax_comp.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=9, loc="lower left", ncol=3)
+    ax_comp.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+
     fig.tight_layout()
     fig.savefig(output_dir / "drawdowns.png")
     plt.close(fig)
@@ -263,22 +304,29 @@ def main() -> None:
     df_daily_returns.to_csv(RESULTS_DIR / "daily_returns.csv")
     print(f"  [OK] Saved daily returns -> {RESULTS_DIR / 'daily_returns.csv'}")
 
-    # Portfolio holdings for optimal strategy
-    opt_result = results_drifted[optimal_lookback]
-    holdings_records = []
-    for rec in opt_result.rebalance_history:
-        for stock in rec["selected_holdings"]:
-            holdings_records.append({
-                "rebalance_date": rec["rebalance_date"].strftime("%Y-%m-%d"),
-                "calculation_date": rec["calculation_date"].strftime("%Y-%m-%d"),
-                "ticker": stock,
-                "raw_weight": rec["raw_weights"].get(stock, np.nan),
-                "capped_weight": rec["capped_weights"].get(stock, np.nan),
-                "action": "RETAINED" if stock in rec["retained_holdings"] else "ADDED",
-            })
-    df_holdings = pd.DataFrame(holdings_records)
-    df_holdings.to_csv(RESULTS_DIR / "portfolio_holdings.csv", index=False)
-    print(f"  [OK] Saved portfolio holdings audit -> {RESULTS_DIR / 'portfolio_holdings.csv'}")
+    # Portfolio holdings export for ALL FIVE lookback strategies (Official Requirement 2)
+    # Schema: lookback_days, rebalance_date, stock, momentum_rank, portfolio_weight
+    all_holdings_records = []
+    for L in LOOKBACK_PERIODS:
+        res = results_drifted[L]
+        for rec in res.rebalance_history:
+            reb_str = rec["rebalance_date"].strftime("%Y-%m-%d")
+            calc_str = rec["calculation_date"].strftime("%Y-%m-%d")
+            for stock in rec["selected_holdings"]:
+                all_holdings_records.append({
+                    "lookback_days": L,
+                    "rebalance_date": reb_str,
+                    "stock": stock,
+                    "momentum_rank": rec["momentum_ranks"][stock],
+                    "portfolio_weight": rec["capped_weights"][stock],
+                    "calculation_date": calc_str,
+                    "raw_weight": rec["raw_weights"][stock],
+                    "action": "RETAINED" if stock in rec["retained_holdings"] else "ADDED",
+                })
+
+    df_all_holdings = pd.DataFrame(all_holdings_records)
+    df_all_holdings.to_csv(RESULTS_DIR / "portfolio_holdings.csv", index=False)
+    print(f"  [OK] Saved all 5 strategies portfolio holdings ({len(df_all_holdings)} rows) -> {RESULTS_DIR / 'portfolio_holdings.csv'}")
 
     # Step 6: Generate Charts
     print("\n[5/6] Generating visualization charts...")

@@ -73,3 +73,4 @@ def rank_momentum(
 
     # Reindex back to original order
     return ranks.reindex(momentum_scores.index)
+

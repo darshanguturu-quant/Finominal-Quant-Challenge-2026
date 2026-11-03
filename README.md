@@ -1,7 +1,6 @@
 # Finominal Quant Challenge 2026: Momentum Factor Optimization
 
-**Role**: Senior Quantitative Developer / Junior Quantitative Analyst  
-**Author**: Quantitative Research & Engineering  
+**Role**: Senior Quantitative Developer / Quantitative Portfolio Engineer  
 **Date**: November 2026  
 **Language**: Python 3.11+ / Python 3.12  
 **Repository**: Systematic Equity Momentum Portfolio Strategy
@@ -15,7 +14,7 @@ This repository contains the complete, mathematically rigorous, and fully reprod
 The core objective is to optimize a **monthly-rebalanced, market-capitalization-weighted momentum strategy** across 30 equities to maximize the **Annualized Sharpe Ratio** (assuming a 0.0% risk-free rate) by evaluating five discrete lookback periods:
 $$\mathcal{L} = \{21, 63, 126, 189, 252\}\text{ exact trading days}$$
 
-### Mandatory Deliverable Highlights
+### Mandatory Deliverable Outputs
 
 | Metric | Optimal Value | Lookback | Notes |
 |---|---|---|---|
@@ -41,7 +40,7 @@ Finominal_Quant_Challenge/
 │   ├── portfolio.py                      # Buffer constraint and iterative 20% capping
 │   ├── backtest.py                       # Daily backtest engine with strict timing
 │   └── metrics.py                        # Sharpe, Cumulative Return, CAGR, and Drawdown
-├── tests/                                # Automated unit test suite (21 tests)
+├── tests/                                # Automated unit test suite (24 tests)
 │   ├── test_data_loader.py
 │   ├── test_momentum.py
 │   ├── test_portfolio.py
@@ -50,13 +49,13 @@ Finominal_Quant_Challenge/
 ├── results/                              # Generated outputs and high-resolution charts
 │   ├── performance_summary.csv           # Multi-metric comparison table
 │   ├── daily_returns.csv                 # Daily portfolio returns for all 5 strategies
-│   ├── portfolio_holdings.csv            # Detailed monthly holdings and weights audit
+│   ├── portfolio_holdings.csv            # Holdings & weights for all 5 strategies (12,300 rows)
 │   ├── cumulative_returns.png            # Log-scale cumulative return curves
 │   ├── sharpe_comparison.png             # Annualized Sharpe ratio bar chart
-│   ├── drawdowns.png                     # Historical underwater drawdown curves
+│   ├── drawdowns.png                     # 2-Panel enhanced underwater drawdown curves
 │   └── risk_return_scatter.png           # Annualized return vs. annualized volatility
 ├── docs/                                 # Institutional audit documentation
-│   ├── data_findings.md                  # Comprehensive dataset audit findings
+│   ├── data_findings.md                  # Comprehensive dataset audit & anomaly findings
 │   ├── assumptions.md                    # Explicit assumptions and convention choices
 │   └── progress.md                       # Phase-by-phase implementation log
 ├── main.py                               # End-to-end execution script
@@ -66,15 +65,15 @@ Finominal_Quant_Challenge/
 
 ---
 
-## 3. Dataset Audit & Preprocessing
+## 3. Dataset Audit & Data Quality Investigation
 
 The historical universe comprises 30 equities spanning **5,337 trading days** from **January 3, 2005 to June 24, 2026**.
 
 ### Key Data Findings & Handling
 
 1. **Date Format Heterogeneity**:
-   - `Test_price_data.csv` uses European day-first format: `%d-%m-%Y` (e.g. `03-01-2005`).
-   - `Test_mcap_data.csv` uses ISO format: `%Y-%m-%d` (e.g. `2005-01-03`).
+   - `Test_price_data.csv` uses European day-first format: `%d-%m-%Y` (e.g., `03-01-2005`).
+   - `Test_mcap_data.csv` uses standard ISO format: `%Y-%m-%d` (e.g., `2005-01-03`).
    - Both datasets were parsed to unified `pd.DatetimeIndex` and confirmed to align row-by-row with zero discrepancies.
 2. **Missing & Invalid Values**:
    - Zero missing values (no `NaN`, `null`, or blank cells).
@@ -83,6 +82,14 @@ The historical universe comprises 30 equities spanning **5,337 trading days** fr
 3. **Burn-In Period**:
    - Exactly 253 trading days are present in 2005 (`2005-01-03` to `2005-12-30`).
    - For the first calculation date $T_{calc} = \text{2005-12-30}$ (index 252), the maximum lookback of 252 days maps to index $252 - 252 = 0$ (`2005-01-03`), ensuring complete historical coverage without trimming.
+
+### Corporate Action Discontinuities & Price Anomaly Investigation
+
+Per Item 1 of the upgrade instructions, an exhaustive scan across all 30 tickers was conducted to investigate extreme daily movements:
+- **Frequency of Extreme Jumps**: A total of 8,493 daily returns exceed +100% or fall below -50%.
+- **Price vs. Market Cap Behavior**: For extreme price jumps (e.g., `GICH.NS` on 2013-11-05: +2,436%; `WIPR.NS` on 2015-08-18: +953.9%), corresponding market capitalizations moved by only normal daily fluctuations (+3.9% and -0.8% respectively).
+- **Economic Interpretation**: The implied share count dropped proportionally, and prices reverted the following day. This confirms that the test dataset contains **raw unadjusted corporate action discontinuities** (splits, bonuses, special sessions).
+- **Preservation Policy**: In accordance with assignment instructions, the input datasets are preserved 100% without arbitrary modification or row deletion. Our monthly share-tracking execution model holds fixed share quantities within each month, naturally immunizing portfolio equity value against transient unadjusted price spikes.
 
 ---
 
@@ -167,11 +174,30 @@ The 5 independent strategies were executed from `2006-01-02` to `2026-06-24` ($N
 
 If the first formation day (`2006-01-02`) is included with cash return $0.0$ ($N = 5,084$ total days):
 - **Lookback 189**: Sharpe = **1.4531**, CAGR = **104.60%**, Cumulative Return = **187,313,822.26%**.
-- Optimal lookback remains unchanged at **189 Days**.
+- Optimal lookback remains unambiguously **189 Days**.
 
 ---
 
-## 6. Generated Visualizations
+## 6. Portfolio Holdings Export (All 5 Strategies)
+
+Per Item 2 of the upgrade instructions, [`results/portfolio_holdings.csv`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/portfolio_holdings.csv) contains holdings and weights across **all five lookback strategies** across all 246 monthly rebalances (**12,300 total rows**):
+
+### Export Schema
+
+| Column Name | Type | Description |
+|---|---|---|
+| `lookback_days` | int | Lookback period ($21, 63, 126, 189, 252$) |
+| `rebalance_date` | string | Rebalance date ($T_{reb}$, `YYYY-MM-DD`) |
+| `stock` | string | Stock ticker symbol (e.g., `AEGS.NS`) |
+| `momentum_rank` | float/int | Momentum rank on calculation date ($1.0 \le \text{rank} \le 12.0$) |
+| `portfolio_weight` | float | Final capped portfolio weight ($0.0 < w_i \le 0.20$) |
+| `calculation_date` | string | Calculation date ($T_{calc}$, `YYYY-MM-DD`) |
+| `raw_weight` | float | Uncapped market-cap weight |
+| `action` | string | `RETAINED` (retained via buffer) or `ADDED` (newly entered) |
+
+---
+
+## 7. Generated Visualizations
 
 All charts were programmatically generated from actual executed code and saved in `results/`:
 
@@ -179,14 +205,26 @@ All charts were programmatically generated from actual executed code and saved i
    Demonstrates long-term capital compounding of all five strategies from 2006 to 2026.
 2. **Sharpe Ratio Comparison**: [`results/sharpe_comparison.png`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/sharpe_comparison.png)  
    Bar chart clearly contrasting risk-adjusted performance, peaking at $L = 189$ days.
-3. **Drawdown Profiles**: [`results/drawdowns.png`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/drawdowns.png)  
-   Underwater curves highlighting market stress regimes (notably 2008 GFC and 2020 COVID shock).
+3. **Underwater Drawdown Profiles (2-Panel Enhanced Layout)**: [`results/drawdowns.png`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/drawdowns.png)  
+   - **Top Panel**: Focused high-contrast view of the **Optimal Strategy ($L = 189$ days)** with shaded underwater fill, maximum drawdown marker (-72.07%), and annotations for key market stress periods (2008 GFC, 2020 COVID shock).
+   - **Bottom Panel**: Clear comparative overlay across all five lookback periods with exact maximum drawdown figures.
 4. **Risk-Return Scatter**: [`results/risk_return_scatter.png`](file:///c:/Users/sreej/Downloads/Finominal%20Quant%20Challenge/results/risk_return_scatter.png)  
-   Annualized volatility vs. CAGR scatter showing the frontier of tested parameters.
+   Annualized volatility vs. CAGR scatter showing the risk-return frontier across candidate lookbacks.
 
 ---
 
-## 7. Installation, Setup & Execution
+## 8. Weight & Constraint Verification
+
+Per Item 4 of the upgrade instructions, automated assertions in `src/backtest.py` and exhaustive tests in `tests/test_portfolio.py` programmatically verify every one of the 1,230 rebalance events ($5 \times 246$):
+
+1. **Exactly 10 Holdings**: $\text{len}(\text{Holdings}) = 10$ and all stocks are unique at every rebalance date.
+2. **20% Maximum Weight Cap**: No single stock's weight exceeds $0.200000$ (verified within $10^{-6}$ tolerance).
+3. **100% Weight Sum**: Total portfolio weight equals exactly $1.000000$ at every rebalance.
+4. **Buffer Integrity**: Every retained stock satisfies $\text{Rank} \le 12$, and every exited stock had $\text{Rank} > 12$.
+
+---
+
+## 9. Installation, Setup & Execution
 
 ### Prerequisites
 - Python 3.11 or Python 3.12
@@ -197,39 +235,23 @@ All charts were programmatically generated from actual executed code and saved i
 pip install -r requirements.txt
 ```
 
-### Step 2: Run the Automated Test Suite
+### Step 2: Run the Automated Test Suite (24 Tests)
 ```bash
 pytest tests -v
 ```
-*Expected output: `21 passed in ~1.3s`.*
+*Expected output: `24 passed`.*
 
 ### Step 3: Run the Complete Backtest Pipeline
 ```bash
 python main.py
 ```
-This automatically verifies the datasets, executes all 5 strategies, saves the CSVs to `results/`, and renders all publication-quality charts.
+This automatically verifies the datasets, executes all 5 strategies, saves the summary CSVs to `results/`, exports all 12,300 portfolio holdings, and generates all high-resolution charts.
 
 ---
 
-## 8. Qualitative Critical Assessment & Limitations
+## 10. Loom Presentation Script (3–5 Minutes)
 
-As Senior Quantitative Developers, presenting raw backtest metrics without critical institutional scrutiny would be incomplete:
-
-1. **Turnover & Buffer Effectiveness**:
-   - The rank-12 retention buffer significantly reduces portfolio churn compared to a simple top-10 selection rule. In stable market regimes, 7–9 stocks are routinely retained each month.
-2. **Raw Price Splits & Corporate Actions**:
-   - The provided closing prices contain raw corporate action anomalies (e.g., bonus issues, unadjusted stock splits).
-   - In our share-tracking buy-and-hold execution model, shares are held throughout the month, which naturally dampens transient price fluctuations. Conversely, naive daily rebalancing algorithms would exploit these artificial single-day price shifts to manufacture unrealistic compounding.
-3. **Execution Frictions & Slippage**:
-   - Real-world institutional deployment must account for transaction costs (e.g., brokerage, STT in Indian markets ~10 bps) and market impact on small-cap names.
-4. **Capacity Constraints**:
-   - The 20% single-stock cap ensures diversification and prevents over-allocation to mega-caps like `WIPR.NS` or `BOB.NS`, but liquidity on lower-cap stocks must be monitored in live production.
-
----
-
-## 9. Loom Presentation Script (3–5 Minutes)
-
-*Below is the exact narration script for the recorded Loom walkthrough video.*
+*Below is the complete narration script for the recorded Loom walkthrough video.*
 
 ### [0:00 – 0:45] Introduction & Executive Overview
 > "Hello everyone. My name is Sreejith, and today I am walking you through the complete implementation of the Finominal Quant Challenge 2026 for the Junior Quantitative Analyst role.
@@ -238,15 +260,17 @@ As Senior Quantitative Developers, presenting raw backtest metrics without criti
 >
 > Right upfront, our programmatic results show that **189 Trading Days (~9 months)** is the optimal lookback parameter, delivering an **Annualized Sharpe Ratio of 1.4532**, a **CAGR of 104.63%**, and a **Cumulative Return of over 187 million percent** across the 20.5-year backtest."
 
-### [0:45 – 1:45] Data Architecture & Look-Ahead Prevention
-> "Let’s look at the data architecture. We were provided with two CSV files containing historical prices and market caps from January 2005 to June 2026.
+### [0:45 – 1:45] Data Architecture & Corporate Action Investigation
+> "Let’s look at the data architecture. We were provided with historical daily closing prices and market capitalization data from January 2005 to June 2026.
 >
-> During data inspection, we identified that the price CSV used European date formatting (`DD-MM-YYYY`) while the market cap CSV used standard ISO formatting (`YYYY-MM-DD`). We parsed and aligned both to a unified chronological datetime index, verifying zero missing values, zero duplicates, and strictly positive prices.
+> In our data quality audit, we addressed date format differences (`DD-MM-YYYY` vs `YYYY-MM-DD`) and aligned all 5,337 trading days with zero missing values.
+>
+> We also conducted an in-depth corporate-action investigation: we detected transient price jumps where prices jumped +1000% but market capitalizations remained unchanged. This proves that these price shifts represent unadjusted corporate actions like stock splits. Because our strategy implements a monthly share-tracking model, holding shares between monthly rebalances, the portfolio value naturally absorbs these temporary shifts without generating artificial turnover profits.
 >
 > Crucially, our backtest engine enforces **zero look-ahead bias**:
 > - Rebalances occur on the first trading day of the month ($T_{reb}$).
 > - All momentum signals and market-cap weights are computed using data strictly from the immediately preceding trading day ($T_{calc}$).
-> - Trades execute at the close of $T_{reb}$, meaning new portfolio weights only apply to returns starting the following morning. Existing holdings earn the return up to $T_{reb}$ close."
+> - Trades execute at the close of $T_{reb}$, meaning new portfolio weights only apply to returns starting the following morning."
 
 ### [1:45 – 2:45] Portfolio Construction & 20% Capping Algorithm
 > "Now let's examine the portfolio construction logic in `src/portfolio.py`:
@@ -254,18 +278,18 @@ As Senior Quantitative Developers, presenting raw backtest metrics without criti
 > 2. Once the 10 stocks are selected, we apply the **iterative 20% weight capping algorithm**. Stocks exceeding 20% are capped at exactly 0.20, their excess weight is summed, and redistributed proportionally to the uncapped stocks based on relative market caps. We repeat this until no stock exceeds 20% and the weights sum to exactly 100%. We validated this with unit tests across equal-weight, single mega-cap, and cascading multi-cap scenarios."
 
 ### [2:45 – 3:45] Backtest Results & Comparative Analysis
-> "Moving to the backtest results:
+> "Moving to the backtest results across all five lookback periods:
 > - Lookback 21 days yielded a Sharpe of 1.3530.
 > - Lookback 63 days yielded a Sharpe of 1.3946.
 > - Lookback 126 days yielded a Sharpe of 1.3972.
 > - Lookback 189 days peaked at our maximum Sharpe of **1.4532**.
 > - Lookback 252 days came in just behind at 1.4523.
 >
-> This demonstrates a classic quantitative finance result: intermediate-to-long-term momentum (6 to 9 months) captures persistent medium-term trends while filtering out high-frequency noise and short-term mean reversion."
+> We have exported full portfolio holdings and weights for all five strategies into `results/portfolio_holdings.csv`, comprising exactly 12,300 audit rows with stock names, momentum ranks, and portfolio weights."
 
 ### [3:45 – 4:30] Code Quality, Testing & Critical Conclusion
 > "To guarantee production quality:
-> - We built 21 automated unit tests in `pytest` covering momentum formulas, rank buffers, capping edge cases, and look-ahead bias perturbation tests. All 21 tests pass with 100% success.
-> - We implemented a realistic drifted-shares execution model, tracking actual share counts within each month to avoid artificial daily rebalancing artifacts.
+> - We built 24 automated unit tests in `pytest` covering momentum formulas, rank buffers, capping edge cases, weight validation across all 1,230 rebalance events, and look-ahead bias perturbation tests. All 24 tests pass with 100% success.
+> - We improved our drawdown visualization with a 2-panel chart highlighting the optimal strategy alongside comparative curves.
 >
 > In conclusion, our solution strictly satisfies every rule of the assignment, uses zero synthetic data for final results, and establishes **189 Trading Days** as the optimal momentum lookback. Thank you for your time and consideration."

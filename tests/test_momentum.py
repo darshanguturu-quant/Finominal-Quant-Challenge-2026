@@ -54,3 +54,4 @@ def test_momentum_non_positive_prices():
 
     with pytest.raises(ValueError, match="Non-positive prices"):
         calculate_momentum(pd.Series({"A": 10.0}), pd.Series({"A": 0.0}))
+

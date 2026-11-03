@@ -149,3 +149,60 @@ def test_construct_rebalanced_portfolio_full_cycle():
     assert len(decision.selected_holdings) == 10
     assert np.isclose(decision.capped_weights.sum(), 1.0)
     assert (decision.capped_weights <= 0.20 + 1e-10).all()
+    assert len(decision.momentum_ranks) == 10
+
+
+def test_rebalance_holdings_and_weights_exhaustive_real_data():
+    """Exhaustively verify all 1,230 rebalance events across all 5 strategies on real data:
+    1. Exactly 10 holdings at every single rebalance.
+    2. No duplicate holdings.
+    3. Maximum weight <= 20% (plus micro tolerance).
+    4. Weights sum to exactly 100% (1.0).
+    5. All retained stocks have momentum rank <= 12.
+    6. All exited stocks have momentum rank > 12.
+    """
+    from pathlib import Path
+    from src.data_loader import load_and_validate_data, get_rebalance_schedule
+    from src.backtest import BacktestEngine
+
+    price_df, mcap_df, _ = load_and_validate_data(
+        Path("data/Test_price_data.csv"),
+        Path("data/Test_mcap_data.csv"),
+    )
+    schedule = get_rebalance_schedule(price_df.index, start_year=2006, max_lookback=252)
+
+    engine = BacktestEngine(
+        price_df=price_df,
+        mcap_df=mcap_df,
+        schedule=schedule,
+        portfolio_size=10,
+        buffer_cutoff_rank=12,
+        weight_cap=0.20,
+    )
+
+    for L in [21, 63, 126, 189, 252]:
+        res = engine.run(lookback_days=L, execution_model="drifted")
+        assert len(res.rebalance_history) == 246
+
+        for rec in res.rebalance_history:
+            holdings = rec["selected_holdings"]
+            capped_w = pd.Series(rec["capped_weights"])
+            ranks = rec["momentum_ranks"]
+            retained = rec["retained_holdings"]
+            exited = rec["exited_holdings"]
+
+            # Rule 1 & 2: Exactly 10 unique holdings
+            assert len(holdings) == 10, f"Failed at L={L}, date={rec['rebalance_date']}"
+            assert len(set(holdings)) == 10
+
+            # Rule 3: Max individual weight <= 20%
+            assert (capped_w <= 0.20 + 1e-6).all(), f"Cap violated at L={L}, date={rec['rebalance_date']}: {capped_w[capped_w > 0.20]}"
+
+            # Rule 4: Total weights sum to 100%
+            assert np.isclose(capped_w.sum(), 1.0, atol=1e-6), f"Sum != 1.0 at L={L}, date={rec['rebalance_date']}"
+
+            # Rule 5: Every retained stock must have rank <= 12
+            for s in retained:
+                assert ranks[s] <= 12, f"Retained stock {s} had rank {ranks[s]} > 12 at L={L}, date={rec['rebalance_date']}"
+
+

@@ -146,3 +146,87 @@ def test_execution_timing_and_weights_application():
     expected_day1_return = float((target_weights * stock_rets).sum())
 
     assert np.isclose(res.daily_returns.loc[day1_date], expected_day1_return, atol=1e-7)
+
+
+def test_portfolio_holdings_export_csv_schema_and_integrity():
+    """Verify that results/portfolio_holdings.csv satisfies all challenge requirements:
+    1. Contains exact columns: lookback_days, rebalance_date, stock, momentum_rank, portfolio_weight.
+    2. Contains exactly 12,300 rows (5 lookbacks * 246 rebalances * 10 holdings).
+    3. Has zero missing values.
+    4. All weights are > 0 and <= 0.20 + 1e-6.
+    5. All ranks are between 1 and 12.
+    """
+    from pathlib import Path
+    csv_path = Path("results/portfolio_holdings.csv")
+    assert csv_path.exists(), "results/portfolio_holdings.csv does not exist. Run main.py first."
+
+    df = pd.read_csv(csv_path)
+
+    # Required columns
+    required_cols = ["lookback_days", "rebalance_date", "stock", "momentum_rank", "portfolio_weight"]
+    for col in required_cols:
+        assert col in df.columns, f"Missing required column: {col}"
+
+    # Row count: 5 * 246 * 10 = 12,300
+    assert len(df) == 12300, f"Expected 12,300 rows, got {len(df)}"
+
+    # Zero nulls
+    assert not df[required_cols].isna().any().any(), "Found null values in holdings export."
+
+    # Weight constraints
+    assert (df["portfolio_weight"] > 0).all(), "Found non-positive weights."
+    assert (df["portfolio_weight"] <= 0.20 + 1e-6).all(), "Found weights exceeding 20% cap."
+
+    # Rank constraints (must be in top 12 due to retention buffer and selection)
+    assert (df["momentum_rank"] >= 1.0).all()
+    assert (df["momentum_rank"] <= 12.0).all()
+
+    # Per-rebalance weight sums must equal 1.0
+    weight_sums = df.groupby(["lookback_days", "rebalance_date"])["portfolio_weight"].sum()
+    assert np.isclose(weight_sums, 1.0, atol=1e-5).all()
+
+    # Per-rebalance holding counts must equal exactly 10
+    holding_counts = df.groupby(["lookback_days", "rebalance_date"])["stock"].count()
+    assert (holding_counts == 10).all()
+
+
+def test_performance_validation_recalculation_and_optimal():
+    """Directly recalculate Sharpe, CR, and CAGR from daily_returns.csv:
+    1. Annualized Sharpe = (mean / sample_std) * sqrt(252).
+    2. Cumulative Return = prod(1 + R) - 1.
+    3. CAGR = (1 + CR)**(252 / N) - 1.
+    4. Programmatically confirm 189 days is optimal lookback.
+    """
+    from pathlib import Path
+    from src.metrics import (
+        calculate_annualized_sharpe_ratio,
+        calculate_cumulative_return,
+        calculate_cagr,
+    )
+
+    returns_path = Path("results/daily_returns.csv")
+    assert returns_path.exists(), "results/daily_returns.csv missing. Run main.py first."
+
+    df_rets = pd.read_csv(returns_path)
+    sharpes = {}
+
+    for L in [21, 63, 126, 189, 252]:
+        col = f"return_L{L}"
+        assert col in df_rets.columns
+        rets = df_rets[col].values
+
+        sr = calculate_annualized_sharpe_ratio(rets)
+        cr = calculate_cumulative_return(rets)
+        cagr = calculate_cagr(cr, len(rets))
+
+        sharpes[L] = sr
+        assert not np.isnan(sr)
+        assert cr > 0
+        assert cagr > 0
+
+    # Programmatic optimal check
+    optimal_L = max(sharpes, key=sharpes.get)
+    assert optimal_L == 189, f"Expected 189 days as optimal lookback, got {optimal_L}"
+    assert np.isclose(sharpes[189], 1.4532, atol=1e-3)
+
+

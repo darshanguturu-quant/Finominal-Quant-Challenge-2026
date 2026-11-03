@@ -170,3 +170,4 @@ def calculate_all_metrics(
         "max_drawdown_pct": max_dd * 100.0,
         "calmar_ratio": calmar,
     }
+

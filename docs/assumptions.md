@@ -36,3 +36,4 @@
 
 - Risk-free rate is assumed to be 0.0% per the assignment specification.
 - No transaction costs, execution slippage, short selling, or leverage are assumed.
+
