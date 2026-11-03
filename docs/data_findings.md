@@ -54,7 +54,18 @@ Below is an audit of the top extreme single-day price movements compared against
    - The subsequent trading day, the price reverted back to its baseline.
    - While certain price spikes where market capitalization remains flat are consistent with unadjusted corporate actions, without official corporate filing records or exchange disclosure data, these 8,493 extreme daily movements are properly classified as **observed price-data anomalies and quote discontinuities** rather than definitively labeled as specific splits or bonus issues.
 
-2. **Per-Stock Volatility Metrics**:
+2. **Price-Return vs. Market-Cap-Return Correlation Methodology (0.0021)**:
+   - **Step-by-Step Mathematical Formulation**:
+     1. For each ticker $i \in \{1, \dots, 30\}$ and each trading day $t \in \{2, \dots, 5337\}$, compute daily percentage returns:
+        $$r_{P, i, t} = \frac{P_{i, t}}{P_{i, t-1}} - 1, \quad r_{MC, i, t} = \frac{MC_{i, t}}{MC_{i, t-1}} - 1$$
+     2. Calculate the Pearson correlation coefficient between the daily price return series and daily market-cap return series for each stock:
+        $$\rho_i = \mathrm{Corr}(r_{P, i}, r_{MC, i}) = \frac{\sum_{t=2}^{5337} (r_{P, i, t} - \bar{r}_{P, i})(r_{MC, i, t} - \bar{r}_{MC, i})}{\sqrt{\sum_{t=2}^{5337} (r_{P, i, t} - \bar{r}_{P, i})^2 \sum_{t=2}^{5337} (r_{MC, i, t} - \bar{r}_{MC, i})^2}}$$
+     3. Take the arithmetic mean across all 30 individual ticker Pearson correlations:
+        $$\bar{\rho} = \frac{1}{30} \sum_{i=1}^{30} \rho_i = 0.002107 \approx \mathbf{0.0021}$$
+     - (Note: Pooling all $30 \times 5,336 = 160,080$ paired observation pairs into a single panel correlation yields $\rho_{\text{pooled}} = 0.001962 \approx 0.0020$).
+   - **Economic Interpretation**: In standard equity markets, absent significant share issuance or buybacks, daily price returns and market-cap returns have correlation near $+1.0$. A near-zero correlation of $0.0021$ empirically demonstrates that the price series contains severe unadjusted quote spikes and anomalies that did not co-occur in the market capitalization series.
+
+3. **Per-Stock Volatility Metrics**:
    - Annualized price volatility for all 30 stocks ranges between **580% and 830%**, with roughly 270 to 350 days of returns exceeding 50% per stock.
    - Market capitalization volatility closely mirrors price volatility across all names (volatility ratio $\approx 0.8\text{x}$ to $1.3\text{x}$).
 
@@ -62,11 +73,13 @@ Below is an audit of the top extreme single-day price movements compared against
 
 1. **Strict Data Preservation**:
    - Per official challenge instructions, the original datasets (`Test_price_data.csv` and `Test_mcap_data.csv`) are preserved 100% without arbitrary modification, outlier deletion, or synthetic corporate-action fabrication.
-2. **Clarification on Fixed Share Counts**:
-   - Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize unadjusted corporate actions or price scale jumps.
-   - If an unadjusted price drops 80% due to an unadjusted 5:1 stock split, holding a fixed share count without receiving the 5x new shares registers an artificial -80% position loss.
-   - Conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
-   - Fixed share counts simply reflect physical execution on the supplied raw closing prices without inventing hypothetical adjustment factors.
+2. **Clarification on Fixed Share Quantities as a Mechanical Backtest**:
+   - Holding fixed share quantities applied to unadjusted prices represents a **mechanical backtest**, not economically adjusted physical holdings through corporate actions.
+   - In a true physical portfolio experiencing a corporate action (such as a 5:1 stock split), an investor's share count would be multiplied by 5, neutralizing the price decline.
+   - In contrast, applying fixed (unadjusted) share quantities directly to raw unadjusted prices means the backtest mechanically tracks the arithmetic of the supplied numbers without corporate-action adjustments:
+     - If an unadjusted price drops 80% due to an unadjusted 5:1 stock split, holding a fixed share count without receiving the 5x new shares registers an artificial -80% position loss.
+     - Conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
+   - Fixed share quantities simply reflect the strict mechanical execution rule required by the challenge specification on the supplied raw closing prices, rather than economically adjusted physical holdings.
 3. **Transaction Costs & Market Frictions**:
    - Transaction costs, execution commissions, slippage, and market impact are not modelled because the assignment specification does not specify or provide parameters for them.
 4. **Material Impact on Strategy Performance**:

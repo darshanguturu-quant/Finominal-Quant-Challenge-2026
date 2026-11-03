@@ -89,7 +89,15 @@ An empirical scan across all 30 tickers was conducted to investigate extreme dai
 - **Frequency of Extreme Jumps**: A total of 8,493 daily returns exceed +100% or fall below -50%.
 - **Price vs. Market Cap Behavior**: For extreme price jumps (e.g., `GICH.NS` on 2013-11-05: +2,436%; `WIPR.NS` on 2015-08-18: +953.9%), corresponding market capitalizations moved by only normal daily fluctuations (+3.9% and -0.8% respectively).
 - **Classification as Observed Price Anomalies**: While certain price spikes where market capitalization remains flat are consistent with unadjusted corporate actions, without supporting official corporate-action filings or exchange records, they are properly classified as **observed price-data anomalies and quote discontinuities** rather than definitively labeled as specific splits or bonus issues.
-- **Clarification on Fixed Share Counts**: Holding fixed share quantities between monthly rebalance dates does **not** neutralize unadjusted corporate actions or price scale jumps. If an unadjusted price drops 80% due to an unadjusted split, holding a fixed share count without receiving new split shares experiences an artificial 80% loss on that position. Conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
+- **Clarification on Fixed Share Quantities as a Mechanical Backtest**:
+  - Holding fixed share quantities applied to unadjusted prices represents a **mechanical backtest**, not economically adjusted physical holdings through corporate actions.
+  - In a true physical portfolio experiencing a corporate action (such as a 5:1 stock split), an investor's share count would be multiplied by 5, neutralizing the price decline.
+  - Applying fixed (unadjusted) share quantities directly to raw unadjusted prices means the backtest mechanically tracks the arithmetic of the supplied numbers without corporate-action adjustments: if an unadjusted price drops 80% due to an unadjusted split, holding a fixed share count without receiving new split shares registers an artificial -80% position loss; conversely, if an unadjusted price jumps 400%, holding fixed shares registers an artificial +300% position gain.
+- **Price-Return vs. Market-Cap-Return Correlation Methodology (0.0021)**:
+  - The reported correlation of **0.0021** is calculated by taking daily percentage returns for prices ($r_{P, i, t} = \frac{P_{i, t}}{P_{i, t-1}} - 1$) and market caps ($r_{MC, i, t} = \frac{MC_{i, t}}{MC_{i, t-1}} - 1$) across all 30 tickers over the 5,336 return days, computing the Pearson correlation coefficient $\rho_i = \mathrm{Corr}(r_{P, i}, r_{MC, i})$ for each ticker, and averaging them across all 30 tickers:
+    $$\bar{\rho} = \frac{1}{30} \sum_{i=1}^{30} \rho_i = 0.002107 \approx \mathbf{0.0021}$$
+  - (The pooled panel correlation across all $160,080$ paired observations is $\rho_{\text{pooled}} = 0.001962 \approx 0.0020$).
+  - In standard equity markets, this correlation is near $+1.0$; near-zero correlation reflects the statistical decoupling of raw prices from market capitalizations during quote anomaly events.
 - **Material Impact on Metrics**: These observed price anomalies materially drive the portfolio's high annualized volatility (262.47%), extreme daily return tails (1,274 days with $|R| > 10\%$), and compounding metrics (CAGR 104.63%).
 - **Preservation Policy & Unresolved Data Limitation**: In strict compliance with challenge rules, the input datasets are preserved 100% without arbitrary modification or synthetic corporate-action fabrication. The absence of official corporate-action adjustment factors is an inherent, unresolved external data limitation. Official results are reported directly from the supplied raw data.
 
@@ -239,11 +247,13 @@ Per Item 4 of the upgrade instructions, automated assertions in `src/backtest.py
 1. **Initial Day Convention**: The backtest execution begins on January 2, 2006. Prior to execution at market close, cash was held (return assumed 0.0%). Active equity returns begin on January 3, 2006.
 2. **Risk-Free Rate**: Assumed 0.0% per the assignment specification.
 3. **Transaction Costs & Market Impact**: Transaction costs and market impact are not modelled because the assignment does not specify or provide parameters for them.
+4. **Mechanical Backtest Assumption**: Fixed share quantities applied to unadjusted prices represent a **mechanical backtest**, not economically adjusted physical holdings through corporate actions.
 
 ### C. Unresolved Data Limitations
 1. **Observed Price-Data Anomalies**: The historical dataset contains 8,493 extreme price movements (> +100% or < -50%). Without official corporate-action filing records, these are treated as observed price-data anomalies and quote discontinuities.
 2. **Absence of Adjustment Factors**: The challenge provides raw closing prices without dividend, split, or bonus adjustment factors. Under the challenge constraints ("preserve original datasets; do not invent external data"), we cannot fabricate adjustment factors or modify prices.
-3. **Performance Impact**: These raw data anomalies materially drive the high portfolio volatility (262.47%) and compounding CAGR (104.63%). Actual performance in live trading may differ materially due to execution frictions, price adjustments, slippage, and liquidity dynamics.
+3. **Price-Return vs. Market-Cap-Return Decoupling (Correlation 0.0021)**: The mean pairwise Pearson correlation between daily price returns and market-cap returns across the 30 tickers is $0.0021$ (pooled panel correlation is $0.0020$), reflecting the statistical decoupling between price series and market cap during anomaly events.
+4. **Performance Impact**: These raw data anomalies materially drive the high portfolio volatility (262.47%) and compounding CAGR (104.63%). Actual performance in live trading may differ materially due to execution frictions, price adjustments, slippage, and liquidity dynamics.
 
 ---
 
@@ -288,7 +298,7 @@ This automatically verifies the datasets, executes all 5 strategies, saves the s
 >
 > In our data quality audit, we addressed date format differences (`DD-MM-YYYY` vs `YYYY-MM-DD`) and aligned all 5,337 trading days with zero missing values.
 >
-> We also conducted an in-depth data anomaly investigation: we observed 8,493 extreme price movements where prices shifted dramatically while market capitalizations remained relatively flat. Without official corporate filing records, these are properly classified as observed price-data anomalies and quote discontinuities. We clarify that holding fixed shares does not neutralize unadjusted corporate actions; rather, without official adjustment factors in the dataset, our backtest preserves the raw data without arbitrary modification. We note transparently that actual performance in live trading may differ materially.
+> We also conducted an in-depth data anomaly investigation: we observed 8,493 extreme price movements where prices shifted dramatically while market capitalizations remained relatively flat. Without official corporate filing records, these are properly classified as observed price-data anomalies and quote discontinuities. We clarify that fixed share quantities applied to unadjusted prices represent a mechanical backtest, not economically adjusted physical holdings through corporate actions; rather, without official adjustment factors in the dataset, our backtest preserves the raw data without arbitrary modification. We note transparently that actual performance in live trading may differ materially.
 >
 > Crucially, our backtest engine enforces **zero look-ahead bias**:
 > - Rebalances occur on the first trading day of the month ($T_{reb}$).
