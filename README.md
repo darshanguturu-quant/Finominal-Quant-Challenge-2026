@@ -88,8 +88,11 @@ The historical universe comprises 30 equities spanning **5,337 trading days** fr
 Per Item 1 of the upgrade instructions, an exhaustive scan across all 30 tickers was conducted to investigate extreme daily movements:
 - **Frequency of Extreme Jumps**: A total of 8,493 daily returns exceed +100% or fall below -50%.
 - **Price vs. Market Cap Behavior**: For extreme price jumps (e.g., `GICH.NS` on 2013-11-05: +2,436%; `WIPR.NS` on 2015-08-18: +953.9%), corresponding market capitalizations moved by only normal daily fluctuations (+3.9% and -0.8% respectively).
-- **Economic Interpretation**: The implied share count dropped proportionally, and prices reverted the following day. This confirms that the test dataset contains **raw unadjusted corporate action discontinuities** (splits, bonuses, special sessions).
-- **Preservation Policy**: In accordance with assignment instructions, the input datasets are preserved 100% without arbitrary modification or row deletion. Our monthly share-tracking execution model holds fixed share quantities within each month, naturally immunizing portfolio equity value against transient unadjusted price spikes.
+- **Economic Interpretation & Fixed Share Counts**:
+  - The implied share count dropped proportionally during price spikes, and prices reverted the following day. This confirms that the test dataset contains **raw unadjusted corporate action discontinuities** (splits, bonuses, special sessions) alongside market noise.
+  - **Correction Regarding Fixed Share Counts**: Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize corporate actions or price scale jumps. If a stock undergoes an unadjusted 5:1 stock split (-80% price drop), holding a fixed share count without receiving the 5x new shares experiences an artificial -80% position loss. Conversely, if an unadjusted price jumps 400%, holding fixed shares takes an artificial +300% position gain.
+  - **Material Impact**: These unadjusted price spikes materially drive the portfolio's high annualized volatility (262.47%), extreme daily return tails (1,274 days with $|R| > 10\%$), and inflated compounding (CAGR 104.63%).
+  - **Preservation Policy & Unresolved Limitation**: In strict compliance with challenge rules, the input datasets are preserved 100% without arbitrary modification or synthetic corporate-action fabrication. The absence of official corporate-action adjustment factors is an inherent, unresolved external data limitation. Official results are reported directly from the supplied raw data.
 
 ---
 
@@ -265,7 +268,7 @@ This automatically verifies the datasets, executes all 5 strategies, saves the s
 >
 > In our data quality audit, we addressed date format differences (`DD-MM-YYYY` vs `YYYY-MM-DD`) and aligned all 5,337 trading days with zero missing values.
 >
-> We also conducted an in-depth corporate-action investigation: we detected transient price jumps where prices jumped +1000% but market capitalizations remained unchanged. This proves that these price shifts represent unadjusted corporate actions like stock splits. Because our strategy implements a monthly share-tracking model, holding shares between monthly rebalances, the portfolio value naturally absorbs these temporary shifts without generating artificial turnover profits.
+> We also conducted an in-depth corporate-action investigation: we detected transient price jumps where prices jumped +1000% while market capitalizations moved by less than 1%. This indicates unadjusted corporate action discontinuities (splits/bonuses). We clarified that holding fixed shares does NOT neutralize splits; rather, without official adjustment factors in the dataset, our backtest reflects pure execution on the raw provided data, which directly drives the high portfolio volatility (262%) and CAGR (104%). We explicitly document this as an inherent external data limitation.
 >
 > Crucially, our backtest engine enforces **zero look-ahead bias**:
 > - Rebalances occur on the first trading day of the month ($T_{reb}$).

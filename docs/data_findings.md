@@ -58,10 +58,17 @@ Below is an audit of the top extreme single-day price movements compared against
    - Annualized price volatility for all 30 stocks ranges between **580% and 830%**, with roughly 270 to 350 days of returns exceeding 50% per stock.
    - Market capitalization volatility closely mirrors price volatility across all names (volatility ratio $\approx 0.8\text{x}$ to $1.3\text{x}$).
 
-### C. Methodological Handling & Compliance
+### C. Methodological Handling, Share Count Correction & Limitations
 
-- **Strict Adherence to Challenge Rules**: Per official instructions, the original dataset must be preserved without manual tampering, synthetic imputation, or selective row dropping.
-- **Robustness of Monthly Share-Tracking**:
-  - In a monthly buy-and-hold execution (share-tracking model), the portfolio holds fixed share quantities between monthly rebalance dates.
-  - When a temporary unadjusted price spike occurs and reverts within days, the portfolio's equity value naturally tracks the reversion without generating artificial profits.
-  - In contrast, a naive daily constant-weight rebalancing algorithm would artificially buy at the dip and sell at the spike, manufacturing unrealistic compounding ($10^{72}\%$ cumulative return). Our production share-tracking model avoids this artifact and reflects true monthly execution.
+1. **Strict Data Preservation**:
+   - Per official challenge instructions, the original datasets (`Test_price_data.csv` and `Test_mcap_data.csv`) are preserved 100% without arbitrary modification, outlier deletion, or synthetic corporate-action fabrication.
+2. **Correction Regarding Fixed Share Counts**:
+   - **Crucial Clarification**: Holding fixed share quantities between monthly rebalance dates does **NOT** neutralize corporate actions or price scale jumps.
+   - If a stock experiences an unadjusted 5:1 stock split (-80% price drop), holding a fixed share count without receiving the 5x new shares experiences an artificial -80% position loss.
+   - Conversely, if a stock experiences a 400% quote jump, holding fixed shares experiences an artificial +400% position gain.
+   - Fixed share counts simply reflect true physical execution on the supplied raw closing prices without inventing hypothetical split adjustment factors.
+3. **Material Impact on Strategy Performance**:
+   - These raw data spikes directly cause the portfolio's high annualized volatility (262.47%), extreme 1-day return tails (1,274 days with $|R| > 10\%$), and inflated compounding (CAGR 104.63%).
+   - The strategy's Sharpe Ratio of 1.4532 reflects the ratio of high mean daily return (+1.51%/day) to high daily volatility (16.53%/day).
+4. **Unresolved Data Limitation**:
+   - The absence of official corporate-action adjustment factors in the Finominal challenge dataset is an inherent external data limitation. All official results presented in this project are derived strictly from the supplied raw data as mandated.
