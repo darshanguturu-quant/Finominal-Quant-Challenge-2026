@@ -27,7 +27,7 @@
 
 ---
 
-## 3. Deep-Dive Data Quality & Corporate Action Anomaly Investigation
+## 3. Deep-Dive Data Quality & Observed Price Anomaly Investigation
 
 ### A. Anomaly Detection & Empirical Findings
 
