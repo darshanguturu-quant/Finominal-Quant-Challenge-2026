@@ -2,8 +2,6 @@
 
 **Role:** Junior Quantitative Analyst  
 **Author:** Shri Dharshan Guturu  
-**Loom walkthrough script:** [docs/loom_script.md](docs/loom_script.md)  
-**AI Pair-Programming Transcript:** [docs/conversation_history.md](docs/conversation_history.md) (Interactive HTML: [docs/conversation_history.html](docs/conversation_history.html))
 
 A monthly-rebalanced, market-capitalization-weighted momentum strategy across a 30-stock equity universe evaluated across five lookback periods (21, 63, 126, 189, and 252 trading days) from January 2006 through June 2026.
 
