@@ -60,12 +60,9 @@ Across the 5,083 active trading days (246 monthly rebalances), **189 trading day
 │   └── sharpe_comparison.png                  # Bar chart of Sharpe ratios across lookbacks
 ├── docs/
 │   ├── assumptions.md                         # Detailed methodology and conventions
-│   ├── conversation_history.html              # Interactive browser chat transcript
-│   ├── conversation_history.md                # Markdown conversation transcript for GitHub
 │   ├── data_findings.md                       # Data audit and price anomaly analysis
-│   ├── loom_script.md                         # Narration script for walkthrough video
 │   └── progress.md                            # Phase-by-phase implementation log
-├── main.py                                    # End-to-end execution script
+├── main.py                                    # End-to-end execution entrypoint
 ├── requirements.txt                           # Project dependencies
 └── README.md
 ```
