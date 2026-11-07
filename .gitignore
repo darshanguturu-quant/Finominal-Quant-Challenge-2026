@@ -5,3 +5,8 @@ __pycache__/
 .venv/
 env/
 
+
+*.bak
+/Test_price_data.csv
+/Test_mcap_data.csv
+/Finominal_Quant Challenge_2026 06.pdf

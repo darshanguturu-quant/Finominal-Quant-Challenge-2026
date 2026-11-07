@@ -41,8 +41,8 @@
 - Validated with analytical hand calculations in unit tests.
 
 ## Phase 6: Automated Testing Suite (`tests/`)
-- Created 21 automated unit tests across 5 test modules.
-- Executed `pytest` with 100% pass rate (21/21 passed).
+- Created 24 automated unit tests across 5 test modules.
+- Executed `pytest` with 100% pass rate (24/24 passed).
 - Verified look-ahead bias prevention by perturbing future prices.
 
 ## Phase 7: Production Pipeline Execution (`main.py`, `results/`)
